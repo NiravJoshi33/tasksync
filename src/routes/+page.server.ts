@@ -3,111 +3,87 @@ import type { Actions } from './$types';
 import { appendToSheet } from '$lib/server/googleSheets';
 import { sendSlackNotification } from '$lib/server/slackNotifier';
 
+// Helper to validate time format (HH:MM)
+function isValidTimeFormat(timeString: string): boolean {
+	if (!timeString) return true; // Optional field, so empty is valid
+	return /^([01]\d|2[0-3]):([0-5]\d)$/.test(timeString);
+}
+
 export const actions: Actions = {
 	default: async ({ request }) => {
 		const formData = await request.formData();
-
-		const taskDate = formData.get('taskDate') as string;
-		const taskDescription = formData.get('taskDescription') as string;
-		const taskType = formData.get('taskType') as string;
-		const taskStatus = formData.get('taskStatus') as string;
-		const taskComments = formData.get('taskComments') as string;
-		const submittedBy = formData.get('submittedBy') as string;
+		const taskData = {
+			taskDate: formData.get('taskDate') as string,
+			startTime: (formData.get('startTime') as string) || '', // Ensure empty string if null/undefined
+			endTime: (formData.get('endTime') as string) || '', // Ensure empty string if null/undefined
+			taskDescription: formData.get('taskDescription') as string,
+			taskType: formData.get('taskType') as string,
+			taskStatus: formData.get('taskStatus') as string,
+			taskComments: formData.get('taskComments') as string,
+			submittedBy: formData.get('submittedBy') as string,
+			submissionTimestamp: new Date().toISOString()
+		};
 
 		const errors: Record<string, string> = {};
-
-		// --- Server-Side Validation (PRD 4.2) ---
-		if (!taskDate) {
-			errors.taskDate = 'Date is required.';
-		}
-		// Basic date format check (can be more robust)
-		else if (!/^\d{4}-\d{2}-\d{2}$/.test(taskDate)) {
+		// Server-Side Validation
+		if (!taskData.taskDate) errors.taskDate = 'Date is required.';
+		else if (!/^\d{4}-\d{2}-\d{2}$/.test(taskData.taskDate))
 			errors.taskDate = 'Date must be in YYYY-MM-DD format.';
+
+		if (taskData.startTime && !isValidTimeFormat(taskData.startTime)) {
+			errors.startTime = 'Start time must be in HH:MM format.';
+		}
+		if (taskData.endTime && !isValidTimeFormat(taskData.endTime)) {
+			errors.endTime = 'End time must be in HH:MM format.';
+		}
+		// Optional: Add logic to ensure endTime is after startTime if both are provided
+		if (taskData.startTime && taskData.endTime && taskData.startTime >= taskData.endTime) {
+			errors.endTime = 'End time must be after start time.';
 		}
 
-		if (!taskDescription) {
-			errors.taskDescription = 'Task description is required.';
-		} else if (taskDescription.length < 10) {
+		if (!taskData.taskDescription) errors.taskDescription = 'Task description is required.';
+		else if (taskData.taskDescription.length < 10)
 			errors.taskDescription = 'Task description must be at least 10 characters long.';
-		}
-
-		if (!taskType) {
-			errors.taskType = 'Task type is required.';
-		}
-		// Can add validation for specific taskType values if needed
-
-		if (!taskStatus) {
-			errors.taskStatus = 'Status is required.';
-		}
-		// Can add validation for specific taskStatus values if needed
-
-		if (!submittedBy) {
-			errors.submittedBy = 'Submitted by is required.';
-		}
+		if (!taskData.taskType) errors.taskType = 'Task type is required.';
+		if (!taskData.taskStatus) errors.taskStatus = 'Status is required.';
+		if (!taskData.submittedBy) errors.submittedBy = 'Submitted by is required.';
 
 		if (Object.keys(errors).length > 0) {
 			return fail(400, {
-				data: {
-					// Return submitted data to repopulate form
-					taskDate,
-					taskDescription,
-					taskType,
-					taskStatus,
-					taskComments,
-					submittedBy
-				},
+				data: taskData,
 				errors,
-				errorMessage: 'Please correct the errors in the form.' // General error message
+				errorMessage: 'Please correct the errors in the form.'
 			});
 		}
 
-		// --- Data Processing (Simulated for now - PRD 4.3, 4.4) ---
-		console.log('Server: Received task submission:', {
-			taskDate,
-			taskDescription,
-			taskType,
-			taskStatus,
-			taskComments,
-			submittedBy
-		});
-
-		// Data Processing - Google Sheets Integration (PRD 4.3)
-		const submissionTimestamp = new Date().toISOString();
-		const rowData = [
-			submissionTimestamp,
-			taskDate,
-			taskDescription,
-			taskType,
-			taskStatus,
-			taskComments,
-			submittedBy
+		// Google Sheets Integration - Order matters for columns
+		const rowDataForSheet = [
+			taskData.submissionTimestamp,
+			new Date(taskData.taskDate).toLocaleDateString('en-IN', { weekday: 'long' }),
+			taskData.taskDate,
+			taskData.startTime, // New column
+			taskData.endTime, // New column
+			taskData.taskDescription,
+			taskData.taskType,
+			taskData.taskStatus,
+			taskData.taskComments,
+			taskData.submittedBy
 		];
 
 		try {
-			const sheetAppendSuccess = await appendToSheet([rowData]); // Pass data as a 2D array
-
+			const sheetAppendSuccess = await appendToSheet([rowDataForSheet]);
 			if (!sheetAppendSuccess) {
 				console.error('Form Action: Failed to append data to Google Sheet.');
 				return fail(500, {
-					data: { taskDate, taskDescription, taskType, taskStatus, taskComments, submittedBy },
+					data: taskData,
 					errorMessage:
 						'Server error: Could not save task to Google Sheets. Please try again later.'
 				});
 			}
-
 			console.log('Form Action: Task data successfully appended to Google Sheet.');
 
-			// Slack Integration (PRD 4.4) - Fire and forget, or log non-critical failure
-			// Call after successful Google Sheets write
-			sendSlackNotification({
-				taskDate,
-				taskDescription,
-				taskType,
-				taskStatus,
-				taskComments,
-				submittedBy,
-				submissionTimestamp
-			})
+			// Slack Integration
+			sendSlackNotification(taskData)
 				.then((slackSuccess) => {
 					if (slackSuccess) {
 						console.log('Form Action: Slack notification sent successfully.');
@@ -123,17 +99,15 @@ export const actions: Actions = {
 
 			return {
 				success: true,
-				successMessage: `Task '${taskDescription.substring(0, 30)}...' logged by ${submittedBy} for ${taskDate}!`,
-				errors: errors
-				// No need to return the data itself on success if form is reset client-side
+				successMessage: `Task '${taskData.taskDescription.substring(0, 30)}...' logged by ${taskData.submittedBy} for ${taskData.taskDate}!`,
+				data: { ...taskData, startTime: '', endTime: '' } // Return empty times on success for form reset
 			};
 		} catch (error) {
 			console.error('Form Action: Unexpected error during Google Sheets integration:', error);
 			return fail(500, {
-				data: { taskDate, taskDescription, taskType, taskStatus, taskComments, submittedBy },
+				data: taskData,
 				errorMessage:
-					'Server error: An unexpected issue occurred while saving your task. Please try again later.',
-				errors: errors
+					'Server error: An unexpected issue occurred while saving your task. Please try again later.'
 			});
 		}
 	}

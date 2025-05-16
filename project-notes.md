@@ -32,6 +32,7 @@ TaskSync is an internal web application designed to streamline daily task loggin
       - [x] Basic layout with a title and a placeholder for the form. (Added to `src/routes/+page.svelte` and updated `src/app.html`)
     - **Form Component (`TaskForm.svelte`):**
       - [x] Create the main form component (`src/lib/components/TaskForm.svelte`) with input fields as per PRD 4.1.3 (Date, Description, Type, Status, Comments, SubmittedBy).
+      - [x] Added optional Start Time and End Time input fields.
       - [x] Integrate `TaskForm.svelte` into the main page (`src/routes/+page.svelte`).
     - **Client-Side Validation (PRD 4.1.4):**
       - [x] Implement real-time feedback for required fields (Basic: using `required` attribute, JS validation for `taskDescription` length and `submittedBy` presence, visual cues with red border).
@@ -50,7 +51,7 @@ TaskSync is an internal web application designed to streamline daily task loggin
 
     - [x] Create a SvelteKit form action to handle form submissions (in `src/routes/+page.server.ts` with a `default` action).
     - [x] Data Reception: Receive and parse form data on the server (using `request.formData()`).
-    - [x] Server-Side Validation: Re-validate all incoming data (implemented for all fields; returns `fail(400, {data, errors, errorMessage})`).
+    - [x] Server-Side Validation: Re-validate all incoming data (implemented for all fields; returns `fail(400, {data, errors, errorMessage})`). Now includes validation for optional Start/End Time format and logic.
     - [x] Error Handling: Implement basic error handling and return appropriate responses to the client (success/error messages and data via `form` prop).
     - [x] Refactored `TaskForm.svelte` to use `use:enhance` for progressive enhancement, display server validation errors per field, and repopulate from `form.data`.
     - [x] Updated `+page.svelte` to pass the `form` prop to `TaskForm` and display global success/error messages from the action.
@@ -66,7 +67,7 @@ TaskSync is an internal web application designed to streamline daily task loggin
       - [x] Implement a function to append task data as a new row to the configured Google Sheet (`appendToSheet` function created).
       - [x] Make Google Sheet ID and specific sheet name configurable via environment variables (`GOOGLE_SHEET_ID`, `GOOGLE_SHEET_NAME` used from `$env/static/private`).
     - **Sheet Structure:**
-      - [ ] Manually prepare the Google Sheet with columns: `Submission Timestamp`, `Date (from form)`, `Task Description`, `Task Type`, `Status`, `Comments`, `Submitted By`. (This is a manual step for the user)
+      - [ ] Manually prepare the Google Sheet with columns: `Submission Timestamp`, `Date (from form)`, `Start Time`, `End Time`, `Task Description`, `Task Type`, `Status`, `Comments`, `Submitted By`. (This is a manual step for the user - **NEW COLUMNS ADDED**)
     - **Integration with Form Action:**
       - [x] Call the Google Sheets append function from the form action in `+page.server.ts`.
     - **Failure Management:**
@@ -82,7 +83,7 @@ TaskSync is an internal web application designed to streamline daily task loggin
       - [x] Create a server-side module (`src/lib/server/slackNotifier.ts`).
       - [x] Implement a function to send a formatted message to a pre-configured Slack channel (`sendSlackNotification` function created).
       - [x] Make Slack channel ID configurable via environment variables (`SLACK_CHANNEL_ID` used from `$env/static/private`).
-      - [x] Format message content using Slack `mrkdwn` as per PRD (Implemented in `formatTaskForSlack`).
+      - [x] Format message content using Slack `mrkdwn` as per PRD (Implemented in `formatTaskForSlack`, now includes optional Start/End Time).
     - **Integration with Form Action:**
       - [x] Call the Slack notification function after successful Google Sheets write (in `+page.server.ts`).
     - **Failure Management:**

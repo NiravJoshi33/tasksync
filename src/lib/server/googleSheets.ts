@@ -63,9 +63,16 @@ export async function appendToSheet(values: any[][]): Promise<boolean> {
 	}
 
 	try {
+		// Find the last row in the sheet
+		const lastRowResponse = await sheetsClient.spreadsheets.values.get({
+			spreadsheetId: GOOGLE_SHEET_ID,
+			range: `${GOOGLE_SHEET_NAME}!A:A`
+		});
+		const lastRow = lastRowResponse.data.values?.length || 0;
+
 		const response = await sheetsClient.spreadsheets.values.append({
 			spreadsheetId: GOOGLE_SHEET_ID,
-			range: `${GOOGLE_SHEET_NAME}!A1`,
+			range: `${GOOGLE_SHEET_NAME}!A${lastRow + 1}`,
 			valueInputOption: 'USER_ENTERED',
 			insertDataOption: 'INSERT_ROWS',
 			resource: { values }

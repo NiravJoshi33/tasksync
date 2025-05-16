@@ -1,18 +1,13 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { onMount } from 'svelte';
-	// Assuming $types is correctly resolved by SvelteKit tooling relative to a common root or via tsconfig paths.
-	// If not, direct relative path like '../../routes/$types' might be needed but can be fragile.
-	import type { ActionData } from '../../routes/$types'; // Corrected path for ActionData
-	// Typically, types are imported from a more specific path or defined locally.
-	// Let's try with this and see if SvelteKit/TS resolves it. If not, adjust to '../../routes/$types.js' or similar.
+	import type { ActionData } from '../../routes/$types';
 
-	export let form: ActionData | undefined = undefined; // Prop to receive form data from the server
-
-	// Component logic will go here
-	// Props, reactive statements, functions, etc.
+	export let form: ActionData | undefined = undefined;
 
 	let taskDate: string = '';
+	let startTime: string = '';
+	let endTime: string = '';
 	let taskDescription: string = '';
 	let taskType: string = 'Planned'; // Default value
 	let taskStatus: string = 'To Do'; // Default value
@@ -36,6 +31,8 @@
 		// Repopulate form from server data if validation failed on initial load (e.g. page reload after fail)
 		if (form?.data) {
 			taskDate = form.data.taskDate || taskDate;
+			startTime = form.data.startTime || '';
+			endTime = form.data.endTime || '';
 			taskDescription = form.data.taskDescription || taskDescription;
 			taskType = form.data.taskType || taskType;
 			taskStatus = form.data.taskStatus || taskStatus;
@@ -48,6 +45,8 @@
 	$: if (form?.data && form.errors) {
 		// Only repopulate if there were errors
 		taskDate = form.data.taskDate || taskDate;
+		startTime = form.data.startTime || '';
+		endTime = form.data.endTime || '';
 		taskDescription = form.data.taskDescription || taskDescription;
 		taskType = form.data.taskType || taskType;
 		taskStatus = form.data.taskStatus || taskStatus;
@@ -135,6 +134,8 @@
 				taskComments = '';
 				submittedBy = ''; // Also reset if desired
 				taskDate = new Date().toISOString().split('T')[0]; // Reset date
+				startTime = '';
+				endTime = '';
 				clientErrors.taskDescription = ''; // Clear client-side errors
 				clientErrors.submittedBy = '';
 			}
@@ -164,6 +165,41 @@
 		{#if form?.errors?.taskDate}
 			<p class="mt-1 text-xs text-red-600">{form.errors.taskDate}</p>
 		{/if}
+	</div>
+
+	<div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+		<div>
+			<label for="startTime" class="block text-sm font-medium text-gray-700"
+				>Start Time (Optional)</label
+			>
+			<input
+				type="time"
+				id="startTime"
+				name="startTime"
+				bind:value={startTime}
+				class:border-red-500={form?.errors?.startTime}
+				class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 focus:outline-none sm:text-sm"
+			/>
+			{#if form?.errors?.startTime}
+				<p class="mt-1 text-xs text-red-600">{form.errors.startTime}</p>
+			{/if}
+		</div>
+		<div>
+			<label for="endTime" class="block text-sm font-medium text-gray-700"
+				>End Time (Optional)</label
+			>
+			<input
+				type="time"
+				id="endTime"
+				name="endTime"
+				bind:value={endTime}
+				class:border-red-500={form?.errors?.endTime}
+				class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 focus:outline-none sm:text-sm"
+			/>
+			{#if form?.errors?.endTime}
+				<p class="mt-1 text-xs text-red-600">{form.errors.endTime}</p>
+			{/if}
+		</div>
 	</div>
 
 	<div>
