@@ -1,13 +1,11 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import type { ActionData } from '../../routes/$types'; // Path to ActionData
+	import type { ActionData } from '../../routes/$types';
 
-	// Svelte 5 Props
 	let { form: formProp }: { form?: ActionData } = $props();
 
 	const projectOptions = ['SMBmarket', 'BeMySearch', 'Misc'];
 
-	// Svelte 5 State
 	let taskDate = $state('');
 	let startTime = $state('');
 	let endTime = $state('');
@@ -23,10 +21,8 @@
 		submittedBy: ''
 	});
 
-	// Initialize date on mount and repopulate from formProp if it exists (e.g., after validation error)
 	$effect(() => {
 		if (typeof window !== 'undefined') {
-			// Ensure onMount-like behavior for client-side only init
 			taskDate = new Date().toISOString().split('T')[0];
 		}
 		if (formProp?.data) {
@@ -45,7 +41,6 @@
 	function validateClientSide() {
 		let isValid = true;
 		clientErrors.taskDescription = '';
-		// clientErrors.submittedBy = ''; // Example if it had client validation
 
 		if (taskDescription.length > 0 && taskDescription.length < 10) {
 			clientErrors.taskDescription = 'Task description must be at least 10 characters.';
@@ -53,19 +48,14 @@
 		}
 		return isValid;
 	}
-
-	// Removed unused validateForm and handleSubmit from previous version as enhance handles it
 </script>
 
 <form
 	method="POST"
 	action="?/logTask"
 	use:enhance={() => {
-		if (!validateClientSide()) {
-			// Optionally return { cancel: true } if client-side validation is critical to stop submission
-		}
 		return async ({ result, update }) => {
-			await update(); // This updates page store, which updates formProp
+			await update();
 			if (result.type === 'success' && result.data?.success) {
 				// Reset form fields
 				taskDate = new Date().toISOString().split('T')[0];
@@ -74,21 +64,14 @@
 				taskDescription = '';
 				taskComments = '';
 				submittedBy = '';
-				// taskType and taskStatus could be reset to defaults if desired
-				// taskType = 'Planned';
-				// taskStatus = 'To Do';
 				clientErrors.taskDescription = '';
 				clientErrors.submittedBy = '';
 				project = '';
 			}
-			// Error display is now primarily through formProp.errors in the template
 		};
 	}}
-	class="space-y-6"
+	class="space-y-8"
 >
-	<h2 class="mb-6 text-xl font-medium text-gray-800">Log Your Task</h2>
-
-	<!-- Display server-side validation errors per field, accessed via formProp -->
 	<div>
 		<label for="taskDate" class="block text-sm font-medium text-gray-700">Date</label>
 		<input

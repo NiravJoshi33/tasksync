@@ -3,14 +3,14 @@ import { SLACK_BOT_TOKEN, SLACK_CHANNEL_ID } from '$env/static/private';
 
 interface TaskData {
 	taskDate: string;
-	startTime?: string; // New: Optional Start Time
-	endTime?: string; // New: Optional End Time
+	startTime?: string;
+	endTime?: string;
 	taskDescription: string;
 	taskType: string;
 	taskStatus: string;
-	taskComments?: string; // Optional
+	taskComments?: string;
 	submittedBy: string;
-	submissionTimestamp: string; // Added for more complete notification
+	submissionTimestamp: string;
 }
 
 let slackWebClient: WebClient | null = null;
@@ -52,12 +52,6 @@ function formatTaskForSlack(taskData: TaskData): string {
 
 	let message = `*New Task Logged by ${submittedBy}*\n`;
 	message += `*Date:* ${formattedEventDate}\n`;
-	if (startTime) {
-		message += `*Start Time:* ${startTime}\n`;
-	}
-	if (endTime) {
-		message += `*End Time:* ${endTime}\n`;
-	}
 	message += `*Task:* ${taskDescription}\n`;
 	message += `*Type:* ${taskType}\n`;
 	message += `*Status:* ${taskStatus}\n`;

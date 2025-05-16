@@ -38,19 +38,18 @@ async function getSheetsClient() {
 		const auth = new google.auth.GoogleAuth({
 			credentials: {
 				client_email: credentials.client_email,
-				private_key: credentials.private_key?.replace(/\\n/g, '\n')
+				private_key: credentials.private_key?.replace(/\\n/g, '\\n')
 			},
 			scopes: SHEETS_SCOPES
 		});
-		const authClient = await auth.getClient();
-		return google.sheets({ version: 'v4', auth: authClient });
+		return google.sheets({ version: 'v4', auth });
 	} catch (error) {
 		console.error('[GoogleSheets] API authentication failed:', error);
 		return null;
 	}
 }
 
-export async function appendToSheet(values: any[][]): Promise<boolean> {
+export async function appendToSheet(values: (string | number | boolean)[][]): Promise<boolean> {
 	if (!GOOGLE_SHEET_ID || !GOOGLE_SHEET_NAME) {
 		console.error('[GoogleSheets] GOOGLE_SHEET_ID or GOOGLE_SHEET_NAME not defined.');
 		return false;
@@ -75,7 +74,7 @@ export async function appendToSheet(values: any[][]): Promise<boolean> {
 			range: `${GOOGLE_SHEET_NAME}!A${lastRow + 1}`,
 			valueInputOption: 'USER_ENTERED',
 			insertDataOption: 'INSERT_ROWS',
-			resource: { values }
+			requestBody: { values }
 		});
 
 		if (response.status === 200) {
