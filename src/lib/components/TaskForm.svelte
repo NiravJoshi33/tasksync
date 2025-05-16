@@ -1,6 +1,43 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { onMount } from 'svelte';
 	import type { ActionData } from '../../routes/$types';
+	import { driver } from 'driver.js';
+	import 'driver.js/dist/driver.css';
+
+	const driverObj = driver({
+		showProgress: true,
+		steps: [
+			{
+				element: 'form',
+				popover: {
+					title: 'Task Form',
+					description: 'Add task related details in this form',
+					side: 'right'
+				}
+			},
+			{
+				element: 'button',
+				popover: {
+					title: 'Log Task',
+					description: 'Click on this button to log the task',
+					side: 'bottom'
+				}
+			}
+		]
+	});
+
+	onMount(() => {
+		if (typeof window !== 'undefined') {
+			const hasVisited = localStorage.getItem('hasVisitedTaskForm');
+			if (!hasVisited) {
+				setTimeout(() => {
+					driverObj.drive();
+				}, 500);
+				localStorage.setItem('hasVisitedTaskForm', 'true');
+			}
+		}
+	});
 
 	let { form: formProp }: { form?: ActionData } = $props();
 

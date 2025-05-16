@@ -29,8 +29,6 @@ function getSlackClient(): WebClient | null {
 function formatTaskForSlack(taskData: TaskData): string {
 	const {
 		taskDate,
-		startTime,
-		endTime,
 		taskDescription,
 		taskType,
 		taskStatus,
