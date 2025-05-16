@@ -10,7 +10,7 @@ function isValidTimeFormat(timeString: string): boolean {
 }
 
 export const actions: Actions = {
-	default: async ({ request }) => {
+	logTask: async ({ request }) => {
 		const formData = await request.formData();
 		const taskData = {
 			taskDate: formData.get('taskDate') as string,
@@ -100,12 +100,14 @@ export const actions: Actions = {
 			return {
 				success: true,
 				successMessage: `Task '${taskData.taskDescription.substring(0, 30)}...' logged by ${taskData.submittedBy} for ${taskData.taskDate}!`,
+				errors: errors,
 				data: { ...taskData, startTime: '', endTime: '' } // Return empty times on success for form reset
 			};
 		} catch (error) {
 			console.error('Form Action: Unexpected error during Google Sheets integration:', error);
 			return fail(500, {
 				data: taskData,
+				errors: errors,
 				errorMessage:
 					'Server error: An unexpected issue occurred while saving your task. Please try again later.'
 			});

@@ -1,156 +1,89 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import { onMount } from 'svelte';
-	import type { ActionData } from '../../routes/$types';
+	import type { ActionData } from '../../routes/$types'; // Path to ActionData
 
-	export let form: ActionData | undefined = undefined;
+	// Svelte 5 Props
+	let { form: formProp }: { form?: ActionData } = $props();
 
-	let taskDate: string = '';
-	let startTime: string = '';
-	let endTime: string = '';
-	let taskDescription: string = '';
-	let taskType: string = 'Planned'; // Default value
-	let taskStatus: string = 'To Do'; // Default value
-	let taskComments: string = '';
-	let submittedBy: string = ''; // Simple text field for V1
+	// Svelte 5 State
+	let taskDate = $state('');
+	let startTime = $state('');
+	let endTime = $state('');
+	let taskDescription = $state('');
+	let taskType = $state('Planned');
+	let taskStatus = $state('To Do');
+	let taskComments = $state('');
+	let submittedBy = $state('');
 
-	// Reactive state for form handling, will be driven by SvelteKit's form action result
-	// These are typically not needed directly with enhance if using page form object,
-	// but can be useful for custom UX before page form data updates.
-	// For this iteration, we rely on page.form provided by SvelteKit for messages.
-
-	// Client-side validation errors (for immediate feedback)
-	let clientErrors = {
+	let clientErrors = $state({
 		taskDescription: '',
 		submittedBy: ''
-	};
-
-	onMount(() => {
-		// Set initial date only on client to avoid SSR mismatch if server rendered a different date
-		taskDate = new Date().toISOString().split('T')[0];
-		// Repopulate form from server data if validation failed on initial load (e.g. page reload after fail)
-		if (form?.data) {
-			taskDate = form.data.taskDate || taskDate;
-			startTime = form.data.startTime || '';
-			endTime = form.data.endTime || '';
-			taskDescription = form.data.taskDescription || taskDescription;
-			taskType = form.data.taskType || taskType;
-			taskStatus = form.data.taskStatus || taskStatus;
-			taskComments = form.data.taskComments || taskComments;
-			submittedBy = form.data.submittedBy || submittedBy;
-		}
 	});
 
-	// Reactive update for when `form` prop changes after submission
-	$: if (form?.data && form.errors) {
-		// Only repopulate if there were errors
-		taskDate = form.data.taskDate || taskDate;
-		startTime = form.data.startTime || '';
-		endTime = form.data.endTime || '';
-		taskDescription = form.data.taskDescription || taskDescription;
-		taskType = form.data.taskType || taskType;
-		taskStatus = form.data.taskStatus || taskStatus;
-		taskComments = form.data.taskComments || taskComments;
-		submittedBy = form.data.submittedBy || submittedBy;
-	}
+	// Initialize date on mount and repopulate from formProp if it exists (e.g., after validation error)
+	$effect(() => {
+		if (typeof window !== 'undefined') {
+			// Ensure onMount-like behavior for client-side only init
+			taskDate = new Date().toISOString().split('T')[0];
+		}
+		if (formProp?.data) {
+			taskDate = formProp.data.taskDate || new Date().toISOString().split('T')[0];
+			startTime = formProp.data.startTime || '';
+			endTime = formProp.data.endTime || '';
+			taskDescription = formProp.data.taskDescription || '';
+			taskType = formProp.data.taskType || 'Planned';
+			taskStatus = formProp.data.taskStatus || 'To Do';
+			taskComments = formProp.data.taskComments || '';
+			submittedBy = formProp.data.submittedBy || '';
+		}
+	});
 
 	function validateClientSide() {
 		let isValid = true;
 		clientErrors.taskDescription = '';
-		clientErrors.submittedBy = '';
+		// clientErrors.submittedBy = ''; // Example if it had client validation
 
 		if (taskDescription.length > 0 && taskDescription.length < 10) {
-			// Only validate if user started typing
 			clientErrors.taskDescription = 'Task description must be at least 10 characters.';
 			isValid = false;
 		}
-		// No client-side validation for submittedBy for now to keep it simple, rely on server.
-		// HTML5 'required' attribute will handle empty check.
 		return isValid;
 	}
 
-	// This will be called by SvelteKit's enhance before submission
-	function beforeSubmit() {
-		if (!validateClientSide()) {
-			// Optionally prevent submission if client-side validation fails significantly,
-			// though server-side validation is the authority.
-			// For now, let client-side validation only show messages.
-		}
-		// isSubmitting state will be handled by use:enhance and page data
-	}
-
-	// After SvelteKit form action completes, this can handle UI updates.
-	// The `form` prop from `+page.svelte` will carry success/error messages.
-	// Resetting the form fields is handled in the `enhance` callback if successful.
-
-	// Basic validation messages (can be made more sophisticated)
-	let errors = {
-		taskDescription: '',
-		submittedBy: '' // Example for another required field if needed
-	};
-
-	function validateForm() {
-		let isValid = true;
-		errors.taskDescription = '';
-		errors.submittedBy = '';
-
-		if (taskDescription.length < 10) {
-			errors.taskDescription = 'Task description must be at least 10 characters.';
-			isValid = false;
-		}
-		if (!submittedBy.trim()) {
-			// Basic check, PRD indicates 'Submitted By' is simple text field for V1.
-			// If it were strictly required with validation, we'd handle it like description.
-			// For now, let's assume it becomes required for this example.
-			errors.submittedBy = 'Submitted By is required.';
-			isValid = false;
-		}
-		// Add more validation rules as needed for other fields (e.g. date)
-		return isValid;
-	}
-
-	async function handleSubmit() {
-		// Implementation of handleSubmit function
-	}
+	// Removed unused validateForm and handleSubmit from previous version as enhance handles it
 </script>
-
-<!--
-	The `form` prop will be passed down from +page.svelte.
-	It contains data from the server after a form submission.
-	export let data; // from +page.server.ts load function
-	export let form; // from +page.server.ts actions
--->
 
 <form
 	method="POST"
+	action="?/logTask"
 	use:enhance={() => {
-		beforeSubmit();
+		if (!validateClientSide()) {
+			// Optionally return { cancel: true } if client-side validation is critical to stop submission
+		}
 		return async ({ result, update }) => {
-			// result.type can be 'success', 'failure', 'error'
-			await update(); // This updates the page store, including `export let form`
+			await update(); // This updates page store, which updates formProp
 			if (result.type === 'success' && result.data?.success) {
-				// Reset form fields on successful submission
-				taskDescription = '';
-				taskComments = '';
-				submittedBy = ''; // Also reset if desired
-				taskDate = new Date().toISOString().split('T')[0]; // Reset date
+				// Reset form fields
+				taskDate = new Date().toISOString().split('T')[0];
 				startTime = '';
 				endTime = '';
-				clientErrors.taskDescription = ''; // Clear client-side errors
+				taskDescription = '';
+				taskComments = '';
+				submittedBy = '';
+				// taskType and taskStatus could be reset to defaults if desired
+				// taskType = 'Planned';
+				// taskStatus = 'To Do';
+				clientErrors.taskDescription = '';
 				clientErrors.submittedBy = '';
 			}
-			// Error messages from `result.data.errors` will be displayed via the `form` prop
+			// Error display is now primarily through formProp.errors in the template
 		};
 	}}
 	class="space-y-6"
 >
 	<h2 class="mb-6 text-xl font-medium text-gray-800">Log Your Task</h2>
 
-	<!-- Success/Error messages will be handled by data passed from +page.svelte via `form` prop -->
-	<!-- Example: {#if form?.successMessage} ... {/if} -->
-	<!-- Example: {#if form?.errorMessage} ... {/if} -->
-	<!-- Example: {#if form?.errors?.fieldName} ... {/if} -->
-
+	<!-- Display server-side validation errors per field, accessed via formProp -->
 	<div>
 		<label for="taskDate" class="block text-sm font-medium text-gray-700">Date</label>
 		<input
@@ -159,11 +92,11 @@
 			name="taskDate"
 			bind:value={taskDate}
 			required
-			class:border-red-500={form?.errors?.taskDate}
+			class:border-red-500={formProp?.errors?.taskDate}
 			class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 focus:outline-none sm:text-sm"
 		/>
-		{#if form?.errors?.taskDate}
-			<p class="mt-1 text-xs text-red-600">{form.errors.taskDate}</p>
+		{#if formProp?.errors?.taskDate}
+			<p class="mt-1 text-xs text-red-600">{formProp.errors.taskDate}</p>
 		{/if}
 	</div>
 
@@ -177,11 +110,11 @@
 				id="startTime"
 				name="startTime"
 				bind:value={startTime}
-				class:border-red-500={form?.errors?.startTime}
+				class:border-red-500={formProp?.errors?.startTime}
 				class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 focus:outline-none sm:text-sm"
 			/>
-			{#if form?.errors?.startTime}
-				<p class="mt-1 text-xs text-red-600">{form.errors.startTime}</p>
+			{#if formProp?.errors?.startTime}
+				<p class="mt-1 text-xs text-red-600">{formProp.errors.startTime}</p>
 			{/if}
 		</div>
 		<div>
@@ -193,11 +126,11 @@
 				id="endTime"
 				name="endTime"
 				bind:value={endTime}
-				class:border-red-500={form?.errors?.endTime}
+				class:border-red-500={formProp?.errors?.endTime}
 				class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 focus:outline-none sm:text-sm"
 			/>
-			{#if form?.errors?.endTime}
-				<p class="mt-1 text-xs text-red-600">{form.errors.endTime}</p>
+			{#if formProp?.errors?.endTime}
+				<p class="mt-1 text-xs text-red-600">{formProp.errors.endTime}</p>
 			{/if}
 		</div>
 	</div>
@@ -213,16 +146,16 @@
 			bind:value={taskDescription}
 			required
 			minlength="10"
-			on:input={validateClientSide}
-			class:border-red-500={clientErrors.taskDescription || form?.errors?.taskDescription}
+			oninput={validateClientSide}
+			class:border-red-500={clientErrors.taskDescription || formProp?.errors?.taskDescription}
 			class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 focus:outline-none sm:text-sm"
 			placeholder="Detailed description of the task (min 10 characters)"
 		></textarea>
-		{#if clientErrors.taskDescription && !form?.errors?.taskDescription}
+		{#if clientErrors.taskDescription && !formProp?.errors?.taskDescription}
 			<p class="mt-1 text-xs text-red-600">{clientErrors.taskDescription}</p>
 		{/if}
-		{#if form?.errors?.taskDescription}
-			<p class="mt-1 text-xs text-red-600">{form.errors.taskDescription}</p>
+		{#if formProp?.errors?.taskDescription}
+			<p class="mt-1 text-xs text-red-600">{formProp.errors.taskDescription}</p>
 		{/if}
 	</div>
 
@@ -233,14 +166,14 @@
 			name="taskType"
 			bind:value={taskType}
 			required
-			class:border-red-500={form?.errors?.taskType}
+			class:border-red-500={formProp?.errors?.taskType}
 			class="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 focus:outline-none sm:text-sm"
 		>
 			<option value="Planned">Planned</option>
 			<option value="New/Ad-hoc">New/Ad-hoc</option>
 		</select>
-		{#if form?.errors?.taskType}
-			<p class="mt-1 text-xs text-red-600">{form.errors.taskType}</p>
+		{#if formProp?.errors?.taskType}
+			<p class="mt-1 text-xs text-red-600">{formProp.errors.taskType}</p>
 		{/if}
 	</div>
 
@@ -251,7 +184,7 @@
 			name="taskStatus"
 			bind:value={taskStatus}
 			required
-			class:border-red-500={form?.errors?.taskStatus}
+			class:border-red-500={formProp?.errors?.taskStatus}
 			class="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 focus:outline-none sm:text-sm"
 		>
 			<option value="To Do">To Do</option>
@@ -260,8 +193,8 @@
 			<option value="Blocked">Blocked</option>
 			<option value="Deferred">Deferred</option>
 		</select>
-		{#if form?.errors?.taskStatus}
-			<p class="mt-1 text-xs text-red-600">{form.errors.taskStatus}</p>
+		{#if formProp?.errors?.taskStatus}
+			<p class="mt-1 text-xs text-red-600">{formProp.errors.taskStatus}</p>
 		{/if}
 	</div>
 
@@ -274,12 +207,12 @@
 			name="taskComments"
 			rows="2"
 			bind:value={taskComments}
-			class:border-red-500={form?.errors?.taskComments}
+			class:border-red-500={formProp?.errors?.taskComments}
 			class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 focus:outline-none sm:text-sm"
 			placeholder="Any additional comments or updates (optional)"
 		></textarea>
-		{#if form?.errors?.taskComments}
-			<p class="mt-1 text-xs text-red-600">{form.errors.taskComments}</p>
+		{#if formProp?.errors?.taskComments}
+			<p class="mt-1 text-xs text-red-600">{formProp.errors.taskComments}</p>
 		{/if}
 	</div>
 
@@ -293,15 +226,15 @@
 			name="submittedBy"
 			bind:value={submittedBy}
 			required
-			class:border-red-500={clientErrors.submittedBy || form?.errors?.submittedBy}
+			class:border-red-500={clientErrors.submittedBy || formProp?.errors?.submittedBy}
 			class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 focus:outline-none sm:text-sm"
 			placeholder="Enter your name (for V1)"
 		/>
-		{#if clientErrors.submittedBy && !form?.errors?.submittedBy}
+		{#if clientErrors.submittedBy && !formProp?.errors?.submittedBy}
 			<p class="mt-1 text-xs text-red-600">{clientErrors.submittedBy}</p>
 		{/if}
-		{#if form?.errors?.submittedBy}
-			<p class="mt-1 text-xs text-red-600">{form.errors.submittedBy}</p>
+		{#if formProp?.errors?.submittedBy}
+			<p class="mt-1 text-xs text-red-600">{formProp.errors.submittedBy}</p>
 		{/if}
 	</div>
 
@@ -316,9 +249,7 @@
 </form>
 
 <style>
-	/* Scoped styles for TaskForm component if needed */
-	/* Using Tailwind utility classes primarily */
 	.border-red-500 {
-		border-color: #ef4444; /* Tailwind's red-500 */
+		border-color: #ef4444;
 	}
 </style>
