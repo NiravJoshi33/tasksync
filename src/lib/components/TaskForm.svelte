@@ -5,6 +5,8 @@
 	// Svelte 5 Props
 	let { form: formProp }: { form?: ActionData } = $props();
 
+	const projectOptions = ['SMBmarket', 'BeMySearch', 'Misc'];
+
 	// Svelte 5 State
 	let taskDate = $state('');
 	let startTime = $state('');
@@ -14,6 +16,7 @@
 	let taskStatus = $state('To Do');
 	let taskComments = $state('');
 	let submittedBy = $state('');
+	let project = $state('');
 
 	let clientErrors = $state({
 		taskDescription: '',
@@ -35,6 +38,7 @@
 			taskStatus = formProp.data.taskStatus || 'To Do';
 			taskComments = formProp.data.taskComments || '';
 			submittedBy = formProp.data.submittedBy || '';
+			project = formProp.data.project || '';
 		}
 	});
 
@@ -75,6 +79,7 @@
 				// taskStatus = 'To Do';
 				clientErrors.taskDescription = '';
 				clientErrors.submittedBy = '';
+				project = '';
 			}
 			// Error display is now primarily through formProp.errors in the template
 		};
@@ -195,6 +200,25 @@
 		</select>
 		{#if formProp?.errors?.taskStatus}
 			<p class="mt-1 text-xs text-red-600">{formProp.errors.taskStatus}</p>
+		{/if}
+	</div>
+
+	<div>
+		<label for="project" class="block text-sm font-medium text-gray-700">Project</label>
+		<select
+			id="project"
+			name="project"
+			bind:value={project}
+			required
+			class:border-red-500={formProp?.errors?.project}
+			class="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 focus:outline-none sm:text-sm"
+		>
+			{#each projectOptions as option}
+				<option value={option}>{option}</option>
+			{/each}
+		</select>
+		{#if formProp?.errors?.project}
+			<p class="mt-1 text-xs text-red-600">{formProp.errors.project}</p>
 		{/if}
 	</div>
 

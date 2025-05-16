@@ -21,6 +21,7 @@ export const actions: Actions = {
 			taskStatus: formData.get('taskStatus') as string,
 			taskComments: formData.get('taskComments') as string,
 			submittedBy: formData.get('submittedBy') as string,
+			project: formData.get('project') as string,
 			submissionTimestamp: new Date().toISOString()
 		};
 
@@ -67,6 +68,7 @@ export const actions: Actions = {
 			taskData.taskType,
 			taskData.taskStatus,
 			taskData.taskComments,
+			taskData.project,
 			taskData.submittedBy
 		];
 
