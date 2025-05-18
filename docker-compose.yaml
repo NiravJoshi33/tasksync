@@ -1,0 +1,36 @@
+services:
+  tasksync:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        # These values will be picked up from your .env file by Docker Compose
+        - GOOGLE_SHEET_ID=${GOOGLE_SHEET_ID}
+        - GOOGLE_SHEET_NAME=${GOOGLE_SHEET_NAME}
+        - GOOGLE_SERVICE_ACCOUNT_CREDENTIALS_JSON=${GOOGLE_SERVICE_ACCOUNT_CREDENTIALS_JSON}
+        - SLACK_BOT_TOKEN=${SLACK_BOT_TOKEN}
+        - SLACK_CHANNEL_ID=${SLACK_CHANNEL_ID}
+    ports:
+      - '5173:5173' # Map host port 3000 to container port 3000
+    env_file:
+      - .env # Load environment variables from .env file
+    environment:
+      - PORT=5173 # You can override or set additional environment variables here
+      # - HOST=0.0.0.0 # SvelteKit adapter-node might need this to listen on all interfaces
+    restart: unless-stopped
+    # volumes:
+    # If you have any data that needs to persist outside the container, define volumes here.
+    # For example, if you had an SQLite database:
+    # - ./data:/app/data
+    logging:
+      driver: 'json-file'
+      options:
+        max-size: '10m'
+        max-file: '3'
+# You can define networks or volumes if needed for more complex setups
+# networks:
+#  app-network:
+#    driver: bridge
+
+# volumes:
+#  app-data:
