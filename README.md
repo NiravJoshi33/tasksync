@@ -85,7 +85,15 @@ SLACK_CHANNEL_ID="C0123ABCDEF"
 
     This will start the SvelteKit development server, typically on `http://localhost:5173`.
 
-2.  **Open in Browser:**
+    or
+
+2.  **Run App inside Docker:**
+
+    ```bash
+    docker-compose up --build -d
+    ```
+
+3.  **Open in Browser:**
     Open your web browser and navigate to the local address provided by the development server.
 
 ## Using the Application
