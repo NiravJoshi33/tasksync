@@ -23,6 +23,14 @@
 					description: 'Click on this button to log the task',
 					side: 'bottom'
 				}
+			},
+			{
+				element: "a[href='/tasks']",
+				popover: {
+					title: 'Tasks',
+					description: 'Click on this button to go to the tasks page',
+					side: 'left'
+				}
 			}
 		]
 	});
