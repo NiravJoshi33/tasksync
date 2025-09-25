@@ -49,7 +49,7 @@
 
 	let { form: formProp }: { form?: ActionData } = $props();
 
-	const projectOptions = ['SMBmarket', 'BeMySearch', 'Misc'];
+	const projectOptions = ['BlockchainHq', 'SMBmarket', 'BeMySearch', 'Misc'];
 
 	let taskDate = $state('');
 	let startTime = $state('');
