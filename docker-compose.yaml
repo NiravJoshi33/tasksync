@@ -16,6 +16,9 @@ services:
       - .env
     environment:
       - PORT=7823 # Uncommon port chosen to avoid conflicts with other dev services
+      # Public origin the app is served from (via the Caddy proxy). adapter-node
+      # otherwise assumes https and rejects the http form POST as cross-site (CSRF 403).
+      - ORIGIN=http://tasksync.local
     restart: unless-stopped
 
     # Join the shared proxy network so the local-proxy (Caddy) stack can reach
