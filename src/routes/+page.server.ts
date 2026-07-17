@@ -12,6 +12,12 @@ function isValidTimeFormat(timeString: string): boolean {
 export const actions: Actions = {
 	logTask: async ({ request }) => {
 		const formData = await request.formData();
+
+		// Resolve project: when "Other" is picked, use the custom project name instead.
+		const selectedProject = (formData.get('project') as string) || '';
+		const customProject = ((formData.get('customProject') as string) || '').trim();
+		const resolvedProject = selectedProject === '__custom__' ? customProject : selectedProject;
+
 		const taskData = {
 			taskDate: formData.get('taskDate') as string,
 			startTime: (formData.get('startTime') as string) || '',
@@ -21,7 +27,7 @@ export const actions: Actions = {
 			taskStatus: formData.get('taskStatus') as string,
 			taskComments: formData.get('taskComments') as string,
 			submittedBy: formData.get('submittedBy') as string,
-			project: formData.get('project') as string,
+			project: resolvedProject,
 			submissionTimestamp: new Date().toISOString()
 		};
 
@@ -46,6 +52,11 @@ export const actions: Actions = {
 		if (!taskData.taskType) errors.taskType = 'Task type is required.';
 		if (!taskData.taskStatus) errors.taskStatus = 'Status is required.';
 		if (!taskData.submittedBy) errors.submittedBy = 'Submitted by is required.';
+		if (!taskData.project)
+			errors.project =
+				selectedProject === '__custom__'
+					? 'Please enter a name for the new project.'
+					: 'Project is required.';
 
 		if (Object.keys(errors).length > 0) {
 			return fail(400, {

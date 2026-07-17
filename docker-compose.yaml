@@ -11,15 +11,25 @@ services:
         - SLACK_BOT_TOKEN=${SLACK_BOT_TOKEN}
         - SLACK_CHANNEL_ID=${SLACK_CHANNEL_ID}
     ports:
-      - '5173:5173'
+      - '7823:7823'
     env_file:
       - .env
     environment:
-      - PORT=5173 # You can override or set additional environment variables here
+      - PORT=7823 # Uncommon port chosen to avoid conflicts with other dev services
     restart: unless-stopped
+
+    # Join the shared proxy network so the local-proxy (Caddy) stack can reach
+    # this service as "tasksync:7823" and serve it at http://tasksync.local
+    networks:
+      - default
+      - web
 
     logging:
       driver: 'json-file'
       options:
         max-size: '10m'
         max-file: '3'
+
+networks:
+  web:
+    external: true

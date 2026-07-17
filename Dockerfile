@@ -48,7 +48,7 @@ COPY --from=builder /app/node_modules ./node_modules
 RUN echo '{ "type": "module" }' > package.json
 
 # Expose the port the app runs on
-EXPOSE 5173
+EXPOSE 7823
 
 # This assumes your build output (e.g., from adapter-node) has an index.js in its root
 CMD ["node", "index.js"]

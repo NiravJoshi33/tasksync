@@ -50,6 +50,7 @@
 	let { form: formProp }: { form?: ActionData } = $props();
 
 	const projectOptions = ['BlockchainHq', 'SMBmarket', 'BeMySearch', 'Misc'];
+	const CUSTOM_PROJECT = '__custom__';
 
 	let taskDate = $state('');
 	let startTime = $state('');
@@ -60,6 +61,7 @@
 	let taskComments = $state('');
 	let submittedBy = $state('');
 	let project = $state('');
+	let customProject = $state('');
 
 	let clientErrors = $state({
 		taskDescription: '',
@@ -79,7 +81,13 @@
 			taskStatus = formProp.data.taskStatus || 'To Do';
 			taskComments = formProp.data.taskComments || '';
 			submittedBy = formProp.data.submittedBy || '';
-			project = formProp.data.project || '';
+			const restoredProject = formProp.data.project || '';
+			if (restoredProject && !projectOptions.includes(restoredProject)) {
+				project = CUSTOM_PROJECT;
+				customProject = restoredProject;
+			} else {
+				project = restoredProject;
+			}
 		}
 	});
 
@@ -112,6 +120,7 @@
 				clientErrors.taskDescription = '';
 				clientErrors.submittedBy = '';
 				project = '';
+				customProject = '';
 			}
 		};
 	}}
@@ -244,7 +253,20 @@
 			{#each projectOptions as option}
 				<option value={option}>{option}</option>
 			{/each}
+			<option value={CUSTOM_PROJECT}>Other (add new project)…</option>
 		</select>
+		{#if project === CUSTOM_PROJECT}
+			<input
+				type="text"
+				id="customProject"
+				name="customProject"
+				bind:value={customProject}
+				required
+				placeholder="Enter new project name"
+				class:border-red-500={formProp?.errors?.project}
+				class="mt-2 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 focus:outline-none sm:text-sm"
+			/>
+		{/if}
 		{#if formProp?.errors?.project}
 			<p class="mt-1 text-xs text-red-600">{formProp.errors.project}</p>
 		{/if}
